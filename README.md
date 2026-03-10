@@ -28,14 +28,3 @@ npm run dev
 cd client
 npm run dev
 ```
-5. Open `http://localhost:5173`
-
-## Security notes
-- Do not commit `.env` to GitHub.
-- Do not share API keys, tokens, DB credentials, or phone IDs.
-- Rotate keys immediately if leaked.
-- Use strong passwords and production network restrictions.
-
-## Development status
-- Part 1: Authentication flow completed
-- Part 2: AI chat + voice flow integrated
