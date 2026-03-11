@@ -14,15 +14,27 @@ const allowedOrigins = (
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+const isAllowedOrigin = (origin: string): boolean => {
+  if (allowedOrigins.includes(origin)) return true;
+
+  // Allow Vercel preview/prod domains when explicitly configured with wildcard.
+  return allowedOrigins.some((allowed) => {
+    if (!allowed.startsWith("*.")) return false;
+    const domain = allowed.slice(1); // ".vercel.app"
+    return origin.endsWith(domain);
+  });
+};
+
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow server-to-server tools and explicit allowed browser origins.
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || isAllowedOrigin(origin)) {
         callback(null, true);
         return;
       }
-      callback(new Error("CORS blocked: origin not allowed"));
+      // Do not throw 500 for disallowed CORS origin.
+      callback(null, false);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
