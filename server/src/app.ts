@@ -17,6 +17,14 @@ const allowedOrigins = (
 const isAllowedOrigin = (origin: string): boolean => {
   if (allowedOrigins.includes(origin)) return true;
 
+  try {
+    const { hostname } = new URL(origin);
+    if (hostname === "localhost" || hostname === "127.0.0.1") return true;
+    if (hostname.endsWith(".vercel.app")) return true;
+  } catch {
+    return false;
+  }
+
   // Allow Vercel preview/prod domains when explicitly configured with wildcard.
   return allowedOrigins.some((allowed) => {
     if (!allowed.startsWith("*.")) return false;
@@ -25,22 +33,24 @@ const isAllowedOrigin = (origin: string): boolean => {
   });
 };
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow server-to-server tools and explicit allowed browser origins.
-      if (!origin || isAllowedOrigin(origin)) {
-        callback(null, true);
-        return;
-      }
-      // Do not throw 500 for disallowed CORS origin.
-      callback(null, false);
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  }),
-);
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow server-to-server tools and explicit allowed browser origins.
+    if (!origin || isAllowedOrigin(origin)) {
+      callback(null, true);
+      return;
+    }
+    // Do not throw 500 for disallowed CORS origin.
+    callback(null, false);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", authRoutes);
