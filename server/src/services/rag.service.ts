@@ -10,7 +10,7 @@ import { MongoDBAtlasVectorSearch } from "@langchain/mongodb";
 import { TextLoader } from "@langchain/classic/document_loaders/fs/text";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { z } from "zod";
-import { getActiveMongoUri, getMongoDbName } from "../config/database.config.ts";
+import { getMongoDbName } from "../config/database.config.ts";
 // --- MongoDB Native Client (for LangChain vector operations) ---
 // ---- __dirname for ESM ----
 const __filename = fileURLToPath(import.meta.url);
@@ -21,25 +21,17 @@ let mongoClient: MongoClient | null = null;
 
 const getMongoClient = async (): Promise<MongoClient> => {
   if (!mongoClient) {
-    const uri = getActiveMongoUri();
+    const uri = process.env.MONGODB_URI;
     if (!uri) {
-      throw new Error("No MongoDB URI configured. Set MONGODB_URI or MONGODB_URI_LOCAL.");
+      throw new Error("MongoDB URI not found in environment variables");
     }
     mongoClient = new MongoClient(uri);
     try {
       await mongoClient.connect();
+      console.log("MongoDB connected successfully");
     } catch (error) {
-      const isActiveAtlasUri = uri === process.env.MONGODB_URI;
-      const fallbackUri = process.env.MONGODB_URI_LOCAL;
-
-      if (isActiveAtlasUri && fallbackUri) {
-        console.warn("Atlas native client connection failed. Retrying with local MongoDB...");
-        mongoClient = new MongoClient(fallbackUri);
-        await mongoClient.connect();
-        process.env.ACTIVE_MONGODB_URI = fallbackUri;
-      } else {
-        throw error;
-      }
+      console.error("MongoDB connection failed:", error);
+      process.exit(1);
     }
   }
   return mongoClient;

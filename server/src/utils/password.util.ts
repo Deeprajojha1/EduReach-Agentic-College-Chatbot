@@ -4,6 +4,7 @@ const SALT_ROUNDS = 10;
 
 export const hashPassword = async (plainPassword: string): Promise<string> => {
   const salt = await bcrypt.genSalt(SALT_ROUNDS);
+  // Salt = random string
   return await bcrypt.hash(plainPassword, salt);
 };
 
